@@ -102,7 +102,8 @@ export const fetchLearningMaterials = async (
   const rows = csv
     .trim()
     .split('\n')
-    .map(row => row.split(','));
+    .map(row => row.split(','))
+    .slice(1);
 
   return rows
     .map((row, index) => rowToLearningMaterial(row, index, level))

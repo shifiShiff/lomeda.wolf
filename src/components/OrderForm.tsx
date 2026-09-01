@@ -1,11 +1,12 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 import './OrderForm.css';
-import { CONFIG } from '../config';
 import type { LearningMaterial } from '../types';
+import { CONFIG } from '../config';
 
 interface OrderFormProps {
+  materials: LearningMaterial[];
   selectedMaterials: LearningMaterial[];
-  onRemoveMaterial: (id: string) => void;
+  onToggleMaterial: (id: string) => void;
 }
 
 interface FormState {
@@ -14,45 +15,57 @@ interface FormState {
   institutionName: string;
 }
 
-const INITIAL_STATE: FormState = {
+const initialForm: FormState = {
   managerName: '',
   institutionEmail: '',
   institutionName: '',
 };
 
-const buildMailtoLink = (form: FormState, materials: LearningMaterial[]): string => {
-  const subject = `בקשת הזמנת לומדות - ${form.institutionName || 'מוסד חינוכי'}`;
+const buildMailtoLink = (
+  form: FormState,
+  materials: LearningMaterial[]
+) => {
+  const subject = `הזמנת לומדות - ${form.institutionName}`;
 
   const materialsList = materials
-    .map((m, i) => `${i + 1}. ${m.name} (${m.subject || 'ללא מקצוע'})`)
+    .map((material) => `- ${material.name}`)
     .join('\n');
 
-  const body = [
-    `שם המנהלת/המנהל: ${form.managerName}`,
-    `מייל המוסד: ${form.institutionEmail}`,
-    `שם המוסד: ${form.institutionName}`,
-    '',
-    'לומדות שנבחרו:',
-    materialsList || '(לא נבחרו לומדות)',
-  ].join('\n');
+  const body = `שלום,
+
+ברצוני להזמין את הלומדות הבאות:
+
+${materialsList}
+
+פרטי המזמין:
+שם מנהל/ת: ${form.managerName}
+שם מוסד: ${form.institutionName}
+אימייל: ${form.institutionEmail}
+
+תודה!`;
 
   return `mailto:${CONFIG.ORDER_RECIPIENT_EMAIL}?subject=${encodeURIComponent(
     subject
   )}&body=${encodeURIComponent(body)}`;
 };
 
-const OrderForm = ({ selectedMaterials, onRemoveMaterial }: OrderFormProps) => {
-  const [form, setForm] = useState<FormState>(INITIAL_STATE);
+const OrderForm = ({
+  materials,
+  selectedMaterials,
+  onToggleMaterial,
+}: OrderFormProps) => {
+  const [form, setForm] = useState<FormState>(initialForm);
   const [submitted, setSubmitted] = useState(false);
 
   const selectedCount = selectedMaterials.length;
   const maxCount = CONFIG.MAX_SELECTED_MATERIALS;
 
-  const updateField = (field: keyof FormState) => (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
-  };
+  const availableMaterials = materials.filter(
+    (material) =>
+      !selectedMaterials.some(
+        (selectedMaterial) => selectedMaterial.id === material.id
+      )
+  );
 
   const isFormValid =
     form.managerName.trim() !== '' &&
@@ -60,110 +73,212 @@ const OrderForm = ({ selectedMaterials, onRemoveMaterial }: OrderFormProps) => {
     form.institutionName.trim() !== '' &&
     selectedCount > 0;
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!isFormValid) return;
+  const updateField =
+    (field: keyof FormState) =>
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setForm((prev) => ({
+        ...prev,
+        [field]: event.target.value,
+      }));
+    };
 
-    // === נקודת שילוח ההזמנה ===
-    // הפתרון הפשוט/החינמי המובנה כאן: פתיחת לקוח המייל של המשתמש עם טופס מוכן.
-    // כתובת היעד מוגדרת ב-CONFIG.ORDER_RECIPIENT_EMAIL (src/config.ts).
-    // אפשר בעתיד להחליף בקריאה לשירות כמו Formspree / EmailJS / Google Form
-    // מבלי לשנות דבר בממשק - רק את הפונקציה הזו.
-    const mailtoLink = buildMailtoLink(form, selectedMaterials);
+  const handleAdditionalMaterialChange = (
+    event: ChangeEvent<HTMLSelectElement>
+  ) => {
+    const materialId = event.target.value;
+
+    if (materialId) {
+      onToggleMaterial(materialId);
+    }
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!isFormValid) {
+      return;
+    }
+
+    const mailtoLink = buildMailtoLink(
+      form,
+      selectedMaterials
+    );
+
     window.location.href = mailtoLink;
     setSubmitted(true);
   };
 
   return (
-    <section className="order-form" id="order-form">
+    <section className="order-form">
       <div className="container">
+
+        {/* כותרת */}
         <div className="order-form__intro">
-          <h2>טופס הזמנת לומדות</h2>
-          <p>בחרו עד {maxCount} לומדות מהרשימות למעלה ומלאו את הפרטים הבאים</p>
+          <h2>הזמנת לומדות</h2>
+
+          <p>
+            מלאו את הפרטים ובחרו את הלומדות שתרצו להזמין
+          </p>
         </div>
 
-        <form className="order-form__card" onSubmit={handleSubmit}>
-          <div className="order-form__grid">
-            <label className="order-form__field">
-              <span>שם המנהלת / המנהל</span>
-              <input
-                type="text"
-                required
-                value={form.managerName}
-                onChange={updateField('managerName')}
-                placeholder="לדוגמה: דנה כהן"
-              />
-            </label>
+        {/* הכרטיס המרכזי */}
+        <div className="order-form__card">
 
-            <label className="order-form__field">
-              <span>מייל מוסד</span>
-              <input
-                type="email"
-                required
-                value={form.institutionEmail}
-                onChange={updateField('institutionEmail')}
-                placeholder="office@school.edu.il"
-              />
-            </label>
+          <form onSubmit={handleSubmit}>
 
-            <label className="order-form__field order-form__field--full">
-              <span>שם המוסד</span>
-              <input
-                type="text"
-                required
-                value={form.institutionName}
-                onChange={updateField('institutionName')}
-                placeholder="לדוגמה: בית ספר יסודי הדקל"
-              />
-            </label>
-          </div>
+            {/* פרטי המזמין */}
+            <div className="order-form__grid">
 
-          <div className="order-form__selection">
-            <div className="order-form__selection-header">
-              <h3>לומדות שנבחרו</h3>
-              <span
-                className={`order-form__counter ${
-                  selectedCount >= maxCount ? 'is-full' : ''
-                }`}
-              >
-                {selectedCount} / {maxCount}
-              </span>
+              <div className="order-form__field">
+                <span>שם מנהל/ת</span>
+
+                <input
+                  type="text"
+                  value={form.managerName}
+                  onChange={updateField('managerName')}
+                  placeholder="הקלד/י שם"
+                  required
+                />
+              </div>
+
+              <div className="order-form__field">
+                <span>שם המוסד</span>
+
+                <input
+                  type="text"
+                  value={form.institutionName}
+                  onChange={updateField('institutionName')}
+                  placeholder="הקלד/י שם מוסד"
+                  required
+                />
+              </div>
+
+              <div className="order-form__field order-form__field--full">
+                <span>כתובת אימייל</span>
+
+                <input
+                  type="email"
+                  value={form.institutionEmail}
+                  onChange={updateField('institutionEmail')}
+                  placeholder="example@email.com"
+                  required
+                />
+              </div>
+
             </div>
 
-            {selectedCount === 0 ? (
-              <p className="order-form__empty">
-                טרם נבחרו לומדות. סמנו "לבחירה בהזמנה" ליד הלומדות הרצויות בטאבים למעלה.
-              </p>
-            ) : (
-              <ul className="order-form__chips">
-                {selectedMaterials.map((material) => (
-                  <li key={material.id} className="order-form__chip">
-                    <span>{material.name}</span>
-                    <button
-                      type="button"
-                      aria-label={`הסירו את ${material.name} מהבחירה`}
-                      onClick={() => onRemoveMaterial(material.id)}
-                    >
-                      ✕
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+            {/* בחירת לומדות */}
+            <div className="order-form__selection">
 
-          <div className="order-form__footer">
-            <button type="submit" className="order-form__submit" disabled={!isFormValid}>
-              שליחת בקשת הזמנה
-            </button>
-            {submitted && (
-              <p className="order-form__success">
-                לקוח המייל נפתח עם פרטי הבקשה. אם לא נפתח אוטומטית, ניתן לשלוח ידנית אל{' '}
-                <strong>{CONFIG.ORDER_RECIPIENT_EMAIL}</strong>.
-              </p>
-            )}
-          </div>
-        </form>
+              <div className="order-form__selection-header">
+
+                <h3>בחירת לומדות</h3>
+
+                <span
+                  className={`order-form__counter ${
+                    selectedCount >= maxCount ? 'is-full' : ''
+                  }`}
+                >
+                  {selectedCount} / {maxCount}
+                </span>
+
+              </div>
+
+              {/* הלומדות שכבר נבחרו */}
+              {selectedMaterials.length === 0 ? (
+                <p className="order-form__empty">
+                  עדיין לא נבחרו לומדות
+                </p>
+              ) : (
+                <ul className="order-form__chips">
+                  {selectedMaterials.map((material) => (
+                    <li
+                      className="order-form__chip"
+                      key={material.id}
+                    >
+                      <span>{material.name}</span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onToggleMaterial(material.id)
+                        }
+                        aria-label={`הסר את ${material.name}`}
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* בחירת לומדה נוספת */}
+              <div
+                className="order-form__field"
+                style={{ marginTop: '18px' }}
+              >
+                <span>בחר לומדה נוספת</span>
+
+                <select
+                  value=""
+                  onChange={handleAdditionalMaterialChange}
+                  disabled={
+                    selectedCount >= maxCount ||
+                    availableMaterials.length === 0
+                  }
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--color-border)',
+                    fontSize: '14.5px',
+                    color: 'var(--color-text)',
+                    background: 'var(--color-bg)',
+                    width: '100%',
+                  }}
+                >
+                  <option value="">
+                    {selectedCount >= maxCount
+                      ? 'הגעת למספר הלומדות המרבי'
+                      : availableMaterials.length === 0
+                        ? 'כל הלומדות נבחרו'
+                        : '-- בחר לומדה --'}
+                  </option>
+
+                  {availableMaterials.map((material) => (
+                    <option
+                      key={material.id}
+                      value={material.id}
+                    >
+                      {material.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+            </div>
+
+            {/* כפתור שליחה */}
+            <div className="order-form__footer">
+
+              <button
+                type="submit"
+                className="order-form__submit"
+                disabled={!isFormValid}
+              >
+                שליחת הזמנה
+              </button>
+
+              {submitted && (
+                <p className="order-form__success">
+                  ההזמנה נפתחה לשליחה באפליקציית הדואר שלך.
+                </p>
+              )}
+
+            </div>
+
+          </form>
+
+        </div>
       </div>
     </section>
   );

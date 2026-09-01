@@ -73,7 +73,11 @@
 export const CONFIG = {
   SHEET_URL_ELEMENTARY: import.meta.env.VITE_SHEET_URL_ELEMENTARY,
   SHEET_URL_HIGHSCHOOL: import.meta.env.VITE_SHEET_URL_HIGHSCHOOL,
+  MAX_SELECTED_MATERIALS: 4,
+  ORDER_RECIPIENT_EMAIL:"sh0527132865@gmail.com"
+
 };
+
 
 export const isUsingPlaceholderConfig = (): boolean => {
   return false;

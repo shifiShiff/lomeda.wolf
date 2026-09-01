@@ -69,7 +69,11 @@ const App = () => {
           </div>
         </section>
 
-        <OrderForm selectedMaterials={selectedMaterials} onRemoveMaterial={toggleSelect} />
+        <OrderForm
+          materials={allMaterials}
+          selectedMaterials={selectedMaterials}
+          onToggleMaterial={toggleSelect}
+        />
       </main>
 
       <Footer />
