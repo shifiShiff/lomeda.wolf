@@ -1,0 +1,18 @@
+.config-warning {
+  background: #fff6e6;
+  border-bottom: 1px solid #f0d9a8;
+  color: #7a5a10;
+  font-size: 13px;
+}
+
+.config-warning__inner {
+  padding-block: 10px;
+  text-align: center;
+}
+
+.config-warning code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}

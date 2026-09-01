@@ -1,0 +1,61 @@
+.site-header {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  box-shadow: var(--shadow-md);
+  position: relative;
+}
+
+.site-header::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-glow) 0%, var(--color-accent) 100%);
+}
+
+.site-header__inner {
+  padding-block: 22px;
+}
+
+.site-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo-placeholder {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  border: 1.5px dashed rgba(255, 255, 255, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  font-family: var(--font-display);
+}
+
+.site-header__titles h1 {
+  color: #ffffff;
+  font-size: clamp(20px, 3vw, 26px);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.site-header__titles p {
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 14px;
+}
+
+@media (max-width: 520px) {
+  .site-header__titles p {
+    font-size: 12.5px;
+  }
+  .logo-placeholder {
+    width: 46px;
+    height: 46px;
+  }
+}

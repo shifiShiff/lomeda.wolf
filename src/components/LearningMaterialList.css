@@ -1,0 +1,63 @@
+.material-list__search {
+  margin-bottom: 18px;
+}
+
+.material-list__search input {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 14.5px;
+  color: var(--color-text);
+  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+.material-list__search input:focus-visible {
+  border-color: var(--color-glow);
+  box-shadow: 0 0 0 4px var(--color-glow-soft);
+  outline: none;
+}
+
+.material-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.material-state {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+}
+
+.material-state--error {
+  border-color: var(--color-error);
+  background: var(--color-error-soft);
+  color: var(--color-error);
+}
+
+.material-state__detail {
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.material-state__spinner {
+  width: 34px;
+  height: 34px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  border: 3px solid var(--color-glow-soft);
+  border-top-color: var(--color-glow);
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
