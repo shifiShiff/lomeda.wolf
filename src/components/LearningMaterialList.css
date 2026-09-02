@@ -1,22 +1,50 @@
 .material-list__search {
-  margin-bottom: 18px;
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.material-list__search-icon {
+  position: absolute;
+  inset-inline-start: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: var(--text-faint);
+  pointer-events: none;
 }
 
 .material-list__search input {
   width: 100%;
-  padding: 13px 16px;
+  padding: 15px 46px 15px 18px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  font-size: 14.5px;
-  color: var(--color-text);
-  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.material-list__search input::placeholder {
+  color: var(--text-faint);
 }
 
 .material-list__search input:focus-visible {
-  border-color: var(--color-glow);
-  box-shadow: 0 0 0 4px var(--color-glow-soft);
   outline: none;
+  border-color: var(--brand-pink);
+  box-shadow: 0 0 0 4px rgba(255, 0, 111, 0.14);
+}
+
+.material-list__note {
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.material-list__note a {
+  color: var(--brand-pink);
+  font-weight: 700;
 }
 
 .material-list__items {
@@ -26,33 +54,35 @@
 }
 
 .material-state {
-  padding: 48px 20px;
+  padding: 52px 24px;
   text-align: center;
-  color: var(--color-text-muted);
-  background: var(--color-surface);
-  border: 1px dashed var(--color-border-strong);
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .material-state--error {
-  border-color: var(--color-error);
-  background: var(--color-error-soft);
-  color: var(--color-error);
+  border-style: solid;
+  border-color: rgba(214, 31, 92, 0.35);
+  background: var(--error-soft);
+  color: var(--error);
 }
 
 .material-state__detail {
-  margin-top: 6px;
+  margin-top: 8px;
   font-size: 13px;
   opacity: 0.85;
 }
 
 .material-state__spinner {
-  width: 34px;
-  height: 34px;
-  margin: 0 auto 14px;
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 16px;
   border-radius: 50%;
-  border: 3px solid var(--color-glow-soft);
-  border-top-color: var(--color-glow);
+  border: 3px solid var(--surface-tint);
+  border-top-color: var(--brand-pink);
   animation: spin 800ms linear infinite;
 }
 

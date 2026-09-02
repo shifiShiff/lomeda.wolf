@@ -4,20 +4,26 @@ const Header = () => {
   return (
     <header className="site-header">
       <div className="container site-header__inner">
-        <div className="site-header__brand">
-          {/*
-            === מקום ללוגו ===
-            להחלפה: הכניסו כאן <img src="/logo.png" alt="שם המוסד/הארגון" />
-            ומחקו את ה-div הבא (logo-placeholder).
-          */}
-          <div className="logo-placeholder" aria-hidden="true">
-            <span>לוגו</span>
-          </div>
-          <div className="site-header__titles">
-            <h1>מאגר הלומדות</h1>
-            <p>לומדות ומצגות דיגיטליות לבתי ספר יסודיים ועל-יסודיים</p>
-          </div>
-        </div>
+        <a className="site-header__brand" href="#top" aria-label="מאגר הלומדות — לדף הבית">
+           <img
+            className="site-header__logo site-header__logo--abraham"
+            src="/wolf-logo.png"
+            alt="סמינר ע״ש הרב י׳ א׳ וולף — מרכז הכשרה והשתלמויות"
+          />
+          <span className="site-header__divider" aria-hidden="true" />
+         <img
+            className="site-header__logo"
+            src="/yecholot-logo.png"
+            alt="יכולות — מרכז חדשנות וסימולציה"
+          />
+        </a>
+
+        <nav className="site-header__nav">
+          <a href="#catalog">קטלוג</a>
+          <a className="btn btn--primary site-header__cta" href="#order">
+            להזמנה
+          </a>
+        </nav>
       </div>
     </header>
   );

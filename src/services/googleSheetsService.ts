@@ -11,29 +11,77 @@ import type { Creator, EducationLevel, LearningMaterial } from '../types';
  * (Anyone with the link - Viewer), אחרת בקשת ה-API תיכשל גם עם מפתח תקין.
  */
 
-// סדר העמודות בכל גיליון, בדיוק כפי שהוגדר בדרישות:
-// A: שם הלומדה | B: מקצוע | C: נושא | D: קהל יעד
-// E: יוצרת 1 | F: טלפון 1 | G: יוצרת 2 | H: טלפון 2 | I: יוצרת 3 | J: טלפון 3
+// סדר העמודות בכל גיליון:
+// A: שם הלומדה | B: מקצוע | C: נושא | D: קהל יעד | E: תיאור
+// F: יוצרת 1 | G: טלפון 1 | H: יוצרת 2 | I: טלפון 2 | J: יוצרת 3 | K: טלפון 3
 const COLUMN_INDEX = {
   name: 0,
   subject: 1,
   topic: 2,
   targetAudience: 3,
-  creator1Name: 4,
-  creator1Phone: 5,
-  creator2Name: 6,
-  creator2Phone: 7,
-  creator3Name: 8,
-  creator3Phone: 9,
+  description: 4,
+  creator1Name: 5,
+  creator1Phone: 6,
+  creator2Name: 7,
+  creator2Phone: 8,
+  creator3Name: 9,
+  creator3Phone: 10,
 } as const;
 
 type SheetRow = string[];
 
-interface GoogleSheetsApiResponse {
-  range: string;
-  majorDimension: string;
-  values?: SheetRow[];
-}
+/**
+ * מנתח טקסט CSV בהתאם ל-RFC 4180: תומך בשדות עטופים במרכאות,
+ * מרכאות כפולות מוברחות (""), ופסיקים או ירידות שורה בתוך שדה עטוף.
+ * זה הכרחי כי עמודת "תיאור" עשויה להכיל פסיקים וירידות שורה.
+ */
+const parseCsv = (text: string): SheetRow[] => {
+  const rows: SheetRow[] = [];
+  let field = '';
+  let row: string[] = [];
+  let inQuotes = false;
+
+  const normalized = text.replace(/\r\n?/g, '\n');
+
+  for (let i = 0; i < normalized.length; i += 1) {
+    const char = normalized[i];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (normalized[i + 1] === '"') {
+          field += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += char;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = true;
+    } else if (char === ',') {
+      row.push(field);
+      field = '';
+    } else if (char === '\n') {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+    } else {
+      field += char;
+    }
+  }
+
+  if (field !== '' || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+
+  return rows;
+};
 
 const buildSheetsUrl = (level: EducationLevel): string => {
   return level === 'elementary'
@@ -73,6 +121,7 @@ const rowToLearningMaterial = (
     subject: row[COLUMN_INDEX.subject]?.trim() ?? '',
     topic: row[COLUMN_INDEX.topic]?.trim() ?? '',
     targetAudience: row[COLUMN_INDEX.targetAudience]?.trim() ?? '',
+    description: row[COLUMN_INDEX.description]?.trim() ?? '',
     creators: extractCreators(row),
   };
 };
@@ -99,11 +148,7 @@ export const fetchLearningMaterials = async (
 
   const csv = await response.text();
 
-  const rows = csv
-    .trim()
-    .split('\n')
-    .map(row => row.split(','))
-    .slice(1);
+  const rows = parseCsv(csv).slice(1); // דילוג על שורת הכותרות
 
   return rows
     .map((row, index) => rowToLearningMaterial(row, index, level))

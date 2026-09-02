@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import './App.css';
 import Header from './components/Header';
+import Hero from './components/Hero';
 import Tabs from './components/Tabs';
 import LearningMaterialList from './components/LearningMaterialList';
 import OrderForm from './components/OrderForm';
@@ -37,11 +38,6 @@ const App = () => {
     });
   }, []);
 
-  const isSelectionDisabled = useCallback(
-    (id: string) => selectedIds.length >= CONFIG.MAX_SELECTED_MATERIALS && !selectedIds.includes(id),
-    [selectedIds]
-  );
-
   return (
     <div className="app">
       {isUsingPlaceholderConfig() && <ConfigWarningBanner />}
@@ -49,23 +45,35 @@ const App = () => {
       <Header />
 
       <main>
-        <section className="container catalog">
-          <Tabs
-            activeLevel={activeLevel}
-            onChange={setActiveLevel}
-            elementaryCount={elementary.length}
-            highSchoolCount={highSchool.length}
-          />
+        <Hero
+          elementaryCount={elementary.length}
+          highSchoolCount={highSchool.length}
+          onSelectLevel={setActiveLevel}
+        />
 
-          <div className="catalog__list">
-            <LearningMaterialList
-              materials={currentMaterials}
-              selectedIds={selectedIds}
-              isSelectionDisabled={isSelectionDisabled}
-              onToggleSelect={toggleSelect}
-              isLoading={isLoading}
-              error={error}
+        <section id="catalog" className="section catalog">
+          <div className="container">
+            <div className="section__head">
+              <h2 className="section__title"> קטלוג הלומדות</h2>
+              <p className="section__subtitle">
+                עיינו במאגר לפי שכבת גיל, מקצוע ונושא. בחירת הלומדות להזמנה מתבצעת בטופס שבהמשך העמוד.
+              </p>
+            </div>
+
+            <Tabs
+              activeLevel={activeLevel}
+              onChange={setActiveLevel}
+              elementaryCount={elementary.length}
+              highSchoolCount={highSchool.length}
             />
+
+            <div className="catalog__list">
+              <LearningMaterialList
+                materials={currentMaterials}
+                isLoading={isLoading}
+                error={error}
+              />
+            </div>
           </div>
         </section>
 

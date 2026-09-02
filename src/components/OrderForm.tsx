@@ -1,7 +1,15 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from 'react';
 import './OrderForm.css';
 import type { LearningMaterial } from '../types';
 import { CONFIG } from '../config';
+import emailjs from '@emailjs/browser';
 
 interface OrderFormProps {
   materials: LearningMaterial[];
@@ -11,274 +19,478 @@ interface OrderFormProps {
 
 interface FormState {
   managerName: string;
-  institutionEmail: string;
   institutionName: string;
+  institutionEmail: string;
+  schoolAddress: string;
+  contactName: string;
+  contactPhone: string;
+  dream: string;
 }
 
 const initialForm: FormState = {
   managerName: '',
-  institutionEmail: '',
   institutionName: '',
+  institutionEmail: '',
+  schoolAddress: '',
+  contactName: '',
+  contactPhone: '',
+  dream: '',
 };
 
-const buildMailtoLink = (
-  form: FormState,
-  materials: LearningMaterial[]
-) => {
-  const subject = `הזמנת לומדות - ${form.institutionName}`;
-
-  const materialsList = materials
-    .map((material) => `- ${material.name}`)
-    .join('\n');
-
-  const body = `שלום,
-
-ברצוני להזמין את הלומדות הבאות:
-
-${materialsList}
-
-פרטי המזמין:
-שם מנהל/ת: ${form.managerName}
-שם מוסד: ${form.institutionName}
-אימייל: ${form.institutionEmail}
-
-תודה!`;
-
-  return `mailto:${CONFIG.ORDER_RECIPIENT_EMAIL}?subject=${encodeURIComponent(
-    subject
-  )}&body=${encodeURIComponent(body)}`;
+const LEVEL_LABEL: Record<string, string> = {
+  elementary: 'יסודי',
+  highSchool: 'תיכון',
 };
 
-const OrderForm = ({
-  materials,
-  selectedMaterials,
-  onToggleMaterial,
-}: OrderFormProps) => {
+type LevelFilter = 'all' | 'elementary' | 'highSchool';
+
+const FILTERS: LevelFilter[] = ['all', 'elementary', 'highSchool'];
+
+const OrderForm = ({ materials, selectedMaterials, onToggleMaterial }: OrderFormProps) => {
   const [form, setForm] = useState<FormState>(initialForm);
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState(false);
+  const [query, setQuery] = useState('');
+  const [levelFilter, setLevelFilter] = useState<LevelFilter>('all');
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  const selectedCount = selectedMaterials.length;
+  const comboRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+
+    const handlePointer = (event: MouseEvent) => {
+      if (comboRef.current && !comboRef.current.contains(event.target as Node)) {
+        setPickerOpen(false);
+      }
+    };
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPickerOpen(false);
+    };
+
+    document.addEventListener('mousedown', handlePointer);
+    document.addEventListener('keydown', handleKey);
+    searchRef.current?.focus();
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [pickerOpen]);
+
   const maxCount = CONFIG.MAX_SELECTED_MATERIALS;
+  const selectedCount = selectedMaterials.length;
+  const isFull = selectedCount >= maxCount;
 
-  const availableMaterials = materials.filter(
-    (material) =>
-      !selectedMaterials.some(
-        (selectedMaterial) => selectedMaterial.id === material.id
-      )
+  const selectedIds = useMemo(
+    () => new Set(selectedMaterials.map((material) => material.id)),
+    [selectedMaterials]
   );
+
+  const filteredMaterials = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    return materials.filter((material) => {
+      if (levelFilter !== 'all' && material.level !== levelFilter) return false;
+      if (!normalized) return true;
+      return [material.name, material.subject, material.topic].some((field) =>
+        field?.toLowerCase().includes(normalized)
+      );
+    });
+  }, [materials, query, levelFilter]);
 
   const isFormValid =
     form.managerName.trim() !== '' &&
-    form.institutionEmail.trim() !== '' &&
     form.institutionName.trim() !== '' &&
+    form.institutionEmail.trim() !== '' &&
+    form.schoolAddress.trim() !== '' &&
+    form.contactName.trim() !== '' &&
+    form.contactPhone.trim() !== '' &&
     selectedCount > 0;
 
   const updateField =
     (field: keyof FormState) =>
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setForm((prev) => ({
-        ...prev,
-        [field]: event.target.value,
-      }));
+    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setForm((prev) => ({ ...prev, [field]: event.target.value }));
     };
 
-  const handleAdditionalMaterialChange = (
-    event: ChangeEvent<HTMLSelectElement>
-  ) => {
-    const materialId = event.target.value;
-
-    if (materialId) {
-      onToggleMaterial(materialId);
-    }
-  };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!isFormValid) {
+    if (!isFormValid || sending) {
       return;
     }
 
-    const mailtoLink = buildMailtoLink(
-      form,
-      selectedMaterials
-    );
+    setSending(true);
+    setSendError(false);
 
-    window.location.href = mailtoLink;
-    setSubmitted(true);
+    const materialsList = selectedMaterials
+      .map((material) => `• ${material.name} (${LEVEL_LABEL[material.level] ?? material.level})`)
+      .join('\n');
+
+    try {
+      await emailjs.send(
+        'service_yob0qfr',
+        'template_v0b16rq',
+        {
+          email: CONFIG.ORDER_RECIPIENT_EMAIL,
+          title: form.institutionName,
+          managerName: form.managerName,
+          institutionName: form.institutionName,
+          institutionEmail: form.institutionEmail,
+          schoolAddress: form.schoolAddress,
+          contactName: form.contactName,
+          contactPhone: form.contactPhone,
+          dream: form.dream.trim() || '—',
+          materialsList,
+        },
+        { publicKey: 'q8McvadhP_V9QkcTQ' }
+      );
+
+      setSubmitted(true);
+    } catch (error) {
+      console.error('Failed to send email:', error);
+      setSendError(true);
+    } finally {
+      setSending(false);
+    }
   };
 
+  if (submitted) {
+    return (
+      <section id="order" className="section order">
+        <div className="container">
+          <div className="order__done">
+            <span className="order__done-icon" aria-hidden="true">
+              ✓
+            </span>
+            <h2>סיימנו :)</h2>
+            <p>
+              הצוות שלנו יטפל בהזמנתך בהקדם
+              <br />
+              ומיד לאחר החגים אי״ה יגיעו למייל שלך
+              <br />
+              מצגות הלומדה שבחרת מוכנות להפעלה.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section className="order-form">
+    <section id="order" className="section order">
       <div className="container">
-
-        {/* כותרת */}
-        <div className="order-form__intro">
-          <h2>הזמנת לומדות</h2>
-
-          <p>
-            מלאו את הפרטים ובחרו את הלומדות שתרצו להזמין
+        <div className="section__head">
+          <h2 className="section__title">הזמנת לומדות</h2>
+          <p className="section__subtitle">
+            מלאו את פרטי המוסד ובחרו עד {maxCount} לומדות. ההזמנה תישלח ישירות לצוות המאגר.
           </p>
         </div>
 
-        {/* הכרטיס המרכזי */}
-        <div className="order-form__card">
+        <form className="order__card" onSubmit={handleSubmit}>
+          <section className="order__block">
+            <h3 className="order__block-title">
+              <span className="order__step">1</span>
+              פרטי המוסד
+            </h3>
 
-          <form onSubmit={handleSubmit}>
-
-            {/* פרטי המזמין */}
-            <div className="order-form__grid">
-
-              <div className="order-form__field">
-                <span>שם מנהל/ת</span>
-
+            <div className="order__grid">
+              <label className="field">
+                <span className="field__label">שם מנהל/ת</span>
                 <input
+                  className="field__input"
                   type="text"
                   value={form.managerName}
                   onChange={updateField('managerName')}
-                  placeholder="הקלד/י שם"
+                  placeholder="שם מנהל/ת"
                   required
                 />
-              </div>
+              </label>
 
-              <div className="order-form__field">
-                <span>שם המוסד</span>
-
+              <label className="field">
+                <span className="field__label">שם המוסד</span>
                 <input
+                  className="field__input"
                   type="text"
                   value={form.institutionName}
                   onChange={updateField('institutionName')}
-                  placeholder="הקלד/י שם מוסד"
+                  placeholder="שם בית הספר / המוסד"
                   required
                 />
-              </div>
+              </label>
 
-              <div className="order-form__field order-form__field--full">
-                <span>כתובת אימייל</span>
-
+              <label className="field field--full">
+                <span className="field__label">כתובת בית הספר</span>
                 <input
+                  className="field__input"
+                  type="text"
+                  value={form.schoolAddress}
+                  onChange={updateField('schoolAddress')}
+                  placeholder="רחוב, מספר ועיר"
+                  required
+                />
+              </label>
+
+              <label className="field">
+                <span className="field__label">שם איש קשר</span>
+                <input
+                  className="field__input"
+                  type="text"
+                  value={form.contactName}
+                  onChange={updateField('contactName')}
+                  placeholder="שם מלא"
+                  required
+                />
+              </label>
+
+              <label className="field">
+                <span className="field__label">טלפון של איש קשר</span>
+                <input
+                  className="field__input"
+                  type="tel"
+                  value={form.contactPhone}
+                  onChange={updateField('contactPhone')}
+                  placeholder="050-0000000"
+                  required
+                />
+              </label>
+
+              <label className="field field--full">
+                <span className="field__label">כתובת אימייל</span>
+                <input
+                  className="field__input"
                   type="email"
                   value={form.institutionEmail}
                   onChange={updateField('institutionEmail')}
-                  placeholder="example@email.com"
+                  placeholder="name@school.org.il"
                   required
                 />
-              </div>
+              </label>
+            </div>
+          </section>
 
+          <section className="order__block">
+            <div className="order__block-head">
+              <h3 className="order__block-title">
+                <span className="order__step">2</span>
+                בחירת לומדות
+              </h3>
+              <span className={`order__counter ${isFull ? 'is-full' : ''}`}>
+                {selectedCount} / {maxCount} נבחרו
+              </span>
             </div>
 
-            {/* בחירת לומדות */}
-            <div className="order-form__selection">
-
-              <div className="order-form__selection-header">
-
-                <h3>בחירת לומדות</h3>
-
-                <span
-                  className={`order-form__counter ${
-                    selectedCount >= maxCount ? 'is-full' : ''
-                  }`}
-                >
-                  {selectedCount} / {maxCount}
-                </span>
-
-              </div>
-
-              {/* הלומדות שכבר נבחרו */}
-              {selectedMaterials.length === 0 ? (
-                <p className="order-form__empty">
-                  עדיין לא נבחרו לומדות
-                </p>
-              ) : (
-                <ul className="order-form__chips">
-                  {selectedMaterials.map((material) => (
-                    <li
-                      className="order-form__chip"
-                      key={material.id}
-                    >
-                      <span>{material.name}</span>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onToggleMaterial(material.id)
-                        }
-                        aria-label={`הסר את ${material.name}`}
-                      >
-                        ×
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {/* בחירת לומדה נוספת */}
+            <div className={`combo ${pickerOpen ? 'is-open' : ''}`} ref={comboRef}>
               <div
-                className="order-form__field"
-                style={{ marginTop: '18px' }}
-              >
-                <span>בחר לומדה נוספת</span>
-
-                <select
-                  value=""
-                  onChange={handleAdditionalMaterialChange}
-                  disabled={
-                    selectedCount >= maxCount ||
-                    availableMaterials.length === 0
+                className="combo__control"
+                role="combobox"
+                aria-expanded={pickerOpen}
+                aria-haspopup="listbox"
+                aria-controls="materials-listbox"
+                tabIndex={0}
+                onClick={() => setPickerOpen((open) => !open)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setPickerOpen((open) => !open);
                   }
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--color-border)',
-                    fontSize: '14.5px',
-                    color: 'var(--color-text)',
-                    background: 'var(--color-bg)',
-                    width: '100%',
-                  }}
-                >
-                  <option value="">
-                    {selectedCount >= maxCount
-                      ? 'הגעת למספר הלומדות המרבי'
-                      : availableMaterials.length === 0
-                        ? 'כל הלומדות נבחרו'
-                        : '-- בחר לומדה --'}
-                  </option>
+                }}
+              >
+                <div className="combo__values">
+                  {selectedCount === 0 ? (
+                    <span className="combo__placeholder">בחרו לומדות להזמנה…</span>
+                  ) : (
+                    selectedMaterials.map((material) => (
+                      <span className="combo__chip" key={material.id}>
+                        <span className="combo__chip-level">
+                          {LEVEL_LABEL[material.level] ?? material.level}
+                        </span>
+                        <span className="combo__chip-name">{material.name}</span>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onToggleMaterial(material.id);
+                          }}
+                          aria-label={`הסרת ${material.name}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))
+                  )}
+                </div>
 
-                  {availableMaterials.map((material) => (
-                    <option
-                      key={material.id}
-                      value={material.id}
-                    >
-                      {material.name}
-                    </option>
-                  ))}
-                </select>
+                <span className="combo__meta">
+                  <span className={`combo__count ${isFull ? 'is-full' : ''}`}>
+                    {selectedCount} / {maxCount}
+                  </span>
+                  <span className="combo__chevron" aria-hidden="true">
+                    <svg viewBox="0 0 16 16">
+                      <path
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m4 6 4 4 4-4"
+                      />
+                    </svg>
+                  </span>
+                </span>
               </div>
 
-            </div>
+              {pickerOpen && (
+                <div className="combo__panel">
+                  <div className="picker__toolbar">
+                    <div className="picker__search">
+                      <svg viewBox="0 0 20 20" aria-hidden="true">
+                        <path
+                          fill="currentColor"
+                          d="M8.5 3a5.5 5.5 0 0 1 4.383 8.82l3.148 3.15a1 1 0 0 1-1.414 1.414l-3.149-3.148A5.5 5.5 0 1 1 8.5 3Zm0 2a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"
+                        />
+                      </svg>
+                      <input
+                        ref={searchRef}
+                        type="search"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="חיפוש לומדה לפי שם, מקצוע או נושא…"
+                        aria-label="חיפוש לומדה להוספה"
+                      />
+                    </div>
 
-            {/* כפתור שליחה */}
-            <div className="order-form__footer">
+                    <div className="picker__filters" role="group" aria-label="סינון לפי שכבה">
+                      {FILTERS.map((filter) => (
+                        <button
+                          type="button"
+                          key={filter}
+                          className={`picker__filter ${
+                            levelFilter === filter ? 'is-active' : ''
+                          }`}
+                          onClick={() => setLevelFilter(filter)}
+                        >
+                          {filter === 'all' ? 'הכל' : LEVEL_LABEL[filter]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-              <button
-                type="submit"
-                className="order-form__submit"
-                disabled={!isFormValid}
-              >
-                שליחת הזמנה
-              </button>
+                  <div
+                    id="materials-listbox"
+                    className="picker__list"
+                    role="listbox"
+                    aria-multiselectable="true"
+                  >
+                    {materials.length === 0 ? (
+                      <p className="picker__empty">
+                        רשימת הלומדות תופיע כאן לאחר טעינת הקטלוג.
+                      </p>
+                    ) : filteredMaterials.length === 0 ? (
+                      <p className="picker__empty">לא נמצאו לומדות התואמות לחיפוש.</p>
+                    ) : (
+                      filteredMaterials.map((material) => {
+                        const checked = selectedIds.has(material.id);
+                        const disabled = !checked && isFull;
 
-              {submitted && (
-                <p className="order-form__success">
-                  ההזמנה נפתחה לשליחה באפליקציית הדואר שלך.
-                </p>
+                        return (
+                          <button
+                            type="button"
+                            key={material.id}
+                            role="option"
+                            aria-selected={checked}
+                            disabled={disabled}
+                            className={`option ${checked ? 'is-selected' : ''} ${
+                              disabled ? 'is-disabled' : ''
+                            }`}
+                            onClick={() => onToggleMaterial(material.id)}
+                          >
+                            <span className="option__check" aria-hidden="true">
+                              <svg viewBox="0 0 16 16">
+                                <path
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.4"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="m3 8.5 3.5 3.5 6.5-7"
+                                />
+                              </svg>
+                            </span>
+
+                            <span className="option__body">
+                              <span className="option__name">{material.name}</span>
+                              <span className="option__meta">
+                                <span
+                                  className={`option__level option__level--${material.level}`}
+                                >
+                                  {LEVEL_LABEL[material.level] ?? material.level}
+                                </span>
+                                {material.subject && <span>{material.subject}</span>}
+                                {material.topic && <span>· {material.topic}</span>}
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {isFull && (
+                    <p className="picker__full">
+                      הגעתם למספר הלומדות המרבי. הסירו לומדה כדי לבחור אחרת.
+                    </p>
+                  )}
+                </div>
               )}
-
             </div>
+          </section>
 
-          </form>
+          <section className="order__block">
+            <h3 className="order__block-title">
+              <span className="order__step">3</span>
+              שתפו אותנו
+            </h3>
 
-        </div>
+            <label className="field">
+              <span className="field__label">
+                יש לך חלום ל״לומדה״ חדשה ומעניינת?  
+              </span>
+              <textarea
+                className="field__input field__textarea"
+                value={form.dream}
+                onChange={updateField('dream')}
+                placeholder="ספרו לנו על הרעיון, הנושא או שכבת הגיל שהייתם רוצים לראות במאגר…"
+                rows={4}
+              />
+              <span className="field__hint">לא חובה — כל רעיון עוזר לנו לפתח את המאגר.</span>
+            </label>
+          </section>
+
+          <div className="order__footer">
+            <button
+              type="submit"
+              className="btn btn--primary order__submit"
+              disabled={!isFormValid || sending}
+            >
+              {sending ? 'שולח…' : 'שליחת הזמנה'}
+            </button>
+
+            {!isFormValid && !sending && (
+              <p className="order__foot-note">
+                יש למלא את כל השדות ולבחור לפחות לומדה אחת.
+              </p>
+            )}
+
+            {sendError && (
+              <p className="order__foot-error">
+                שליחת ההזמנה נכשלה. בדקו את החיבור לאינטרנט ונסו שוב.
+              </p>
+            )}
+          </div>
+        </form>
       </div>
     </section>
   );

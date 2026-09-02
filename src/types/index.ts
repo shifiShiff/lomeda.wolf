@@ -16,6 +16,8 @@ export interface LearningMaterial {
   subject: string;
   topic: string;
   targetAudience: string;
+  /** תיאור חופשי של הלומדה (עמודה E בגיליון) */
+  description: string;
   creators: Creator[];
 }
 

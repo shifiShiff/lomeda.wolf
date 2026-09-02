@@ -1,49 +1,61 @@
 :root {
-  /* ==== פלטת צבעים ==== */
-  --color-bg: #f6f8fb;
-  --color-surface: #ffffff;
-  --color-surface-alt: #eef3f9;
+  color-scheme: light;
 
-  --color-primary: #17385f;      /* כחול עמוק - עוגן מוסדי */
-  --color-primary-dark: #0e2540;
-  --color-primary-light: #2c5c93;
+  /* ==== מותג ==== */
+  --brand-purple: #610790;
+  --brand-blue: #002b8c;
+  --brand-pink: #ff006f;
 
-  --color-glow: #4fa3e0;         /* כחול זוהר עדין - הדגשות/פוקוס/הובר */
-  --color-glow-soft: rgba(79, 163, 224, 0.16);
-  --color-glow-ring: rgba(79, 163, 224, 0.35);
+  --brand-purple-bright: #8a1fc0;
+  --brand-blue-bright: #2246c9;
+  --brand-pink-bright: #ff2d86;
 
-  --color-accent: #7c2438;       /* בורדו/אדמדם - נגיעות הדגשה */
-  --color-accent-dark: #5c1a2a;
-  --color-accent-soft: rgba(124, 36, 56, 0.1);
+  /* ==== רקעים ==== */
+  --page-bg: #bcd0ec;
 
-  --color-text: #1b222c;
-  --color-text-muted: #5a6472;
-  --color-text-faint: #8a93a3;
+  /* ==== משטחים ==== */
+  --surface: #ffffff;
+  --surface-alt: #f6f3ff;
+  --surface-tint: #f0ebff;
 
-  --color-border: #e1e6ee;
-  --color-border-strong: #c7cede;
+  --border: rgba(38, 16, 84, 0.12);
+  --border-strong: rgba(38, 16, 84, 0.2);
 
-  --color-success: #1e7a4c;
-  --color-success-soft: #e7f5ee;
-  --color-error: #a3283f;
-  --color-error-soft: #fbeaee;
+  /* ==== טקסט ==== */
+  --text: #1c1436;
+  --text-muted: #574d72;
+  --text-faint: #8b83a3;
+
+  /* ==== משוב ==== */
+  --success: #0f9d6b;
+  --success-soft: #e3f7ef;
+  --error: #d61f5c;
+  --error-soft: #fdeaf1;
+
+  /* ==== גרדיאנטים ==== */
+  --grad-brand: linear-gradient(120deg, var(--brand-blue) 0%, var(--brand-purple) 52%, var(--brand-pink) 100%);
+  --grad-cta: linear-gradient(120deg, var(--brand-purple) 0%, var(--brand-pink) 100%);
+  --grad-text: linear-gradient(110deg, #610790 0%, #ff006f 55%, #002b8c 100%);
 
   /* ==== טיפוגרפיה ==== */
   --font-display: 'Heebo', 'Segoe UI', system-ui, sans-serif;
   --font-body: 'Assistant', 'Segoe UI', system-ui, sans-serif;
 
   /* ==== מידות ==== */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 34px;
   --radius-pill: 999px;
 
-  --shadow-sm: 0 1px 2px rgba(15, 37, 64, 0.06);
-  --shadow-md: 0 6px 20px rgba(15, 37, 64, 0.08);
-  --shadow-lg: 0 16px 40px rgba(15, 37, 64, 0.14);
+  --shadow-sm: 0 2px 10px rgba(43, 20, 90, 0.08);
+  --shadow-md: 0 16px 44px rgba(43, 20, 90, 0.12);
+  --shadow-lg: 0 34px 80px rgba(43, 20, 90, 0.18);
+  --glow-purple: 0 20px 50px rgba(97, 7, 144, 0.25);
+  --glow-pink: 0 18px 46px rgba(255, 0, 111, 0.28);
 
-  --container-width: 1040px;
+  --container-width: 1140px;
 
-  --transition-fast: 150ms ease;
-  --transition-base: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 140ms ease;
+  --transition-base: 260ms cubic-bezier(0.4, 0, 0.2, 1);
 }
