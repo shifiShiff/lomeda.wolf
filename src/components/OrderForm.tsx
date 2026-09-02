@@ -131,8 +131,8 @@ const OrderForm = ({ materials, selectedMaterials, onToggleMaterial }: OrderForm
 
     try {
       await emailjs.send(
-        'service_yob0qfr',
-        'template_v0b16rq',
+        'service_uxh1yls',
+        'template_r5j7f8l',
         {
           email: CONFIG.ORDER_RECIPIENT_EMAIL,
           title: form.institutionName,
@@ -145,7 +145,7 @@ const OrderForm = ({ materials, selectedMaterials, onToggleMaterial }: OrderForm
           dream: form.dream.trim() || '—',
           materialsList,
         },
-        { publicKey: 'q8McvadhP_V9QkcTQ' }
+        { publicKey: '2XIi7Y0Fb3gS3A_XE' }
       );
 
       setSubmitted(true);
