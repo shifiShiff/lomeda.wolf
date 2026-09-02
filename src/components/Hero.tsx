@@ -30,7 +30,9 @@ const Hero = ({ elementaryCount, highSchoolCount, onSelectLevel }: HeroProps) =>
           <h1 className="hero__title">
             {/* פרויקט לומדות */}
             <span className="hero__title-grad">פרויקט "לומדות"</span>
-            <span className="hero__title-text">מבית סמינר הרב וולף בשיתוף מרכז 'יכולות' </span>
+            <span className="hero__title-text">מבית סמינר הרב וולף</span>
+            <span className="hero__title-little-text">בשיתוף מרכז 'יכולות' </span>
+
           </h1>
 
           <div className="hero__lead">

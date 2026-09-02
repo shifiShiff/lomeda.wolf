@@ -69,6 +69,10 @@
   font-size: 40px;
   color: darkblue;
 }
+.hero__title-little-text{
+  font-size: 30px;
+  color: darkblue;
+}
 
 .hero__lead {
   margin-top: 24px;
