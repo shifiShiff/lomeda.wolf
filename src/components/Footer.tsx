@@ -14,9 +14,9 @@ const Footer = () => {
            <img src="/yecholot-logo.png" alt="יכולות — מרכז חדשנות וסימולציה" />
         </div>
 
-        <p className="site-footer__tagline">
+        {/* <p className="site-footer__tagline">
           מאגר הלומדות · מרכז חדשנות וסימולציה מבית סמינר הרב וולף   
-        </p>
+        </p> */}
 
         <p className="site-footer__copy">
           © {new Date().getFullYear()} כל הזכויות שמורות

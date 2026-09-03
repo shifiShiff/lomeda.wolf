@@ -24,7 +24,7 @@ const Hero = ({ elementaryCount, highSchoolCount, onSelectLevel }: HeroProps) =>
         <div className="hero__content">
           <span className="hero__badge">
             <span className="hero__badge-dot" />
-            מרכז חדשנות וסימולציה · בית אהל אברהם
+            מרכז חדשנות וסימולציה מבית אהל אברהם
           </span>
 
           <h1 className="hero__title">
@@ -86,7 +86,6 @@ const Hero = ({ elementaryCount, highSchoolCount, onSelectLevel }: HeroProps) =>
 
         <div className="hero__visual">
           <div className="hero__brandcard">
-            <span className="hero__brandcard-label">מבית</span>
 
             <img
               className="hero__brandcard-logo hero__brandcard-logo--abraham"
@@ -102,7 +101,6 @@ const Hero = ({ elementaryCount, highSchoolCount, onSelectLevel }: HeroProps) =>
               src="/yecholot-logo.png"
               alt="יכולות — מרכז חדשנות וסימולציה"
             />
-            <p className="hero__brandcard-text">מרכז חדשנות וסימולציה · בית אהל אברהם</p>
           </div>
 
           <div className="hero__orb hero__orb--1" aria-hidden="true" />
